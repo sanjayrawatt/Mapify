@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css" />
+    <script src="https://unpkg.com/@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js"></script>
+    <link href="https://unpkg.com/@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css" rel="stylesheet" />
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.min.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.css' type='text/css' />
+    <link rel="stylesheet" href="style.css">
+    <title>Google Maps Clone</title>
+</head>
+<body>
+    <div id="geocoder-container"></div>
+    <div id="controls">
+        <select id="theme-selector">
+            <option value="mapbox://styles/mapbox/streets-v11">Streets</option>
+            <option value="mapbox://styles/mapbox/dark-v11">Dark Mode</option>
+            <option value="mapbox://styles/mapbox/light-v10">Light Mode</option>
+            <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+        </select>
+        <button id="save-location">Save Location</button>
+        <button id="share-location">Share Location</button>
+    </div>
+    <div id="map"></div>
+    <script src="script.js"></script>
+</body>
+</html>
