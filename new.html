@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.9.2/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.0/mapbox-gl-directions.css" />
+    <script src="https://unpkg.com/@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js"></script>
+    <link href="https://unpkg.com/@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css" rel="stylesheet" />
+    <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.min.js'></script>
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.0/mapbox-gl-geocoder.css' type='text/css' />
+    <title>Google Maps Clone</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden; /* Prevent map overflow */
+            font-family: Arial, sans-serif;
+        }
+    
+        #map {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #geocoder-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: 50%;
+        }
+
+        #geocoder-container .mapboxgl-ctrl-geocoder--icon {
+            display: none; /* Remove the search bar icon */
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        #controls button {
+            padding: 10px 15px;
+            font-size: 14px;
+            border: none;
+            background-color: #f0f0f0;
+            color: #333;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #controls button:hover {
+            background-color: #ddd;
+        }
+
+        #theme-selector {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="geocoder-container"></div>
+    <div id="controls">
+        <select id="theme-selector">
+            <option value="mapbox://styles/mapbox/streets-v11">Streets</option>
+            <option value="mapbox://styles/mapbox/dark-v11">Dark Mode</option>
+            <option value="mapbox://styles/mapbox/light-v10">Light Mode</option>
+            <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+        </select>
+        <button id="save-location">Save Location</button>
+        <button id="share-location">Share Location</button>
+    </div>
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1Ijoic2FuamF5cmF3YXR0IiwiYSI6ImNtNWw0eDltbzFqM3kya3M3d2pld3Q3cWUifQ.4ApcVfCmk7Nblvn4px00EA';
+    
+        let mapStyle = "mapbox://styles/mapbox/streets-v11"; // Default style
+    
+        navigator.geolocation.getCurrentPosition(
+            successLocation,
+            errorLocation,
+            { enableHighAccuracy: true }
+        );
+    
+        function successLocation(position) {
+            setupMap([position.coords.longitude, position.coords.latitude]);
+        }
+    
+        function errorLocation() {
+            setupMap([72.8777, 19.0760]); // Default to Bombay (Mumbai)
+        }
+    
+        function setupMap(center) {
+            const map = new mapboxgl.Map({
+                container: "map",
+                style: mapStyle,
+                center: center,
+                zoom: 17
+            });
+
+            map.on('load', function () {
+                map.addLayer({
+                    'id': 'traffic',
+                    'type': 'line',
+                    'source': {
+                        'type': 'vector',
+                        'url': 'mapbox://mapbox.mapbox-traffic-v1'
+                    },
+                    'source-layer': 'traffic',
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        'line-color': '#ff0000',
+                        'line-width': 2
+                    }
+                });
+            });
+    
+            const nav = new mapboxgl.NavigationControl();
+            map.addControl(nav);
+    
+            const directions = new MapboxDirections({
+                accessToken: mapboxgl.accessToken,
+                unit: 'metric',
+                profile: 'mapbox/driving-traffic', // Use traffic-aware driving profile
+                alternatives: true // Enable alternative routes
+            });
+            map.addControl(directions, "top-left");
+    
+            // Add a marker to represent the current location
+            const currentLocationMarker = new mapboxgl.Marker({
+                color: "red", // Marker color
+                draggable: false // Marker is not draggable
+            })
+                .setLngLat(center)
+                .setPopup(new mapboxgl.Popup().setText("You are here")) // Add a popup
+                .addTo(map);
+    
+            const draw = new MapboxDraw({
+                displayControlsDefault: false,
+                controls: {
+                    polygon: true,
+                    trash: true
+                }
+            });
+            map.addControl(draw);
+    
+            // Save location functionality
+            const saveButton = document.getElementById("save-location");
+            saveButton.addEventListener("click", () => {
+                const favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+                favorites.push(center);
+                localStorage.setItem("favorites", JSON.stringify(favorites));
+                alert("Location saved!");
+            });
+    
+            // Share location functionality
+            const shareButton = document.getElementById("share-location");
+            shareButton.addEventListener("click", () => {
+                const url = `${window.location.origin}?lat=${center[1]}&lng=${center[0]}`;
+                navigator.clipboard.writeText(url);
+                alert("Location link copied!");
+            });
+    
+            // Theme change functionality
+            const themeSelector = document.getElementById("theme-selector");
+            themeSelector.addEventListener("change", function () {
+                map.setStyle(themeSelector.value);
+            });
+
+            // Add search functionality using Mapbox Geocoder
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                marker: {
+                    color: "orange"
+                },
+                placeholder: "Search location..."
+            });
+            document.getElementById('geocoder-container').appendChild(geocoder.onAdd(map));
+
+            geocoder.on('result', function (result) {
+                map.flyTo({
+                    center: result.result.center,
+                    zoom: 15
+                });
+            });
+        }
+    </script>
+</body>
+</html>
+
+
